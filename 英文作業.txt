@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Choice Island - Fixed</title>
+<style>
+/* 基礎樣式和字體設置 */
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 更改為更通用的字體 */
+    background: #e6f7ff; /* 輕微修改背景色 */
+    margin: 0; 
+    padding: 20px; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+h1 { 
+    text-align: center; 
+    font-size: 28px; 
+    color: #00796b;
+    margin-bottom: 5px;
+}
+/* 狀態欄樣式：使用 Flexbox 確保對齊 */
+.status { 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: space-around; 
+    margin: 15px 0; 
+    font-size: 20px; 
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.status div {
+    padding: 0 10px;
+}
+
+/* 卡片容器：使用 Flexbox 或 Grid 讓商品並排顯示 */
+#shop {
+    display: grid;
+    grid-template-columns: 1fr; /* 默認單欄 */
+    gap: 20px;
+    width: 100%;
+    max-width: 700px;
+    margin-top: 20px;
+}
+@media (min-width: 600px) {
+    #shop {
+        grid-template-columns: 1fr 1fr; /* 寬螢幕時兩欄 */
+    }
+}
+
+/* 單個商品卡片樣式 */
+.card { 
+    background: #ffffff; 
+    border-radius: 12px; 
+    padding: 20px; 
+    box-shadow: 0 6px 10px rgba(0,0,0,0.1); 
+    border: 1px solid #c8e6c9;
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+}
+
+.card h3 { 
+    font-size: 20px; 
+    margin-top: 0; 
+    color: #388e3c;
+}
+.card p {
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+/* 按鈕樣式 */
+button { 
+    width: 100%; 
+    padding: 12px 0; 
+    margin-top: 15px; 
+    font-size: 17px; 
+    border-radius: 10px; 
+    border: none; 
+    background-color: #66bb6a; 
+    color: white; 
+    cursor: pointer; 
+    transition: background-color 0.2s;
+}
+button:hover:not(.disabled) {
+    background-color: #43a047;
+}
+button.disabled { 
+    background-color: #bdbdbd; 
+    cursor: not-allowed; 
+}
+
+/* 訊息和結果顯示區 */
+#message {
+    width: 100%;
+    max-width: 600px;
+    min-height: 40px;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 16px;
+    color: #d32f2f;
+    font-weight: bold;
+}
+.footer { 
+    margin-top: 25px; 
+    text-align: center; 
+    font-size: 14px; 
+    color: #555; 
+}
+</style>
+</head>
+<body>
+
+<h1>🌱 Eco Choice Island</h1>
+
+<div class="status">
+  <div>💰 Money: <span id="money">1000</span></div>
+  <div>🌍 Eco Points: <span id="eco">0</span></div>
+</div>
+
+<div id="message">Tip: Choose eco-friendly products to increase Eco Points!</div>
+
+<div id="shop"></div>
+
+<div class="footer">Game developed with simple HTML and JavaScript logic.</div>
+
+<script>
+let money = 1000;
+let eco = 0;
+let round = 0;
+const shop = document.getElementById("shop");
+const messageBox = document.getElementById("message");
+const moneyDisplay = document.getElementById("money");
+const ecoDisplay = document.getElementById("eco");
+
+const groups = [
+  [
+    { name: "Disposable Correction Tape", cost: 20, eco: -5, desc: "Cheap and convenient, not eco-friendly." },
+    { name: "Reusable Correction Tape", cost: 40, eco: 10, desc: "Refillable, good for the Earth." }
+  ],
+  [
+    { name: "Plastic Building Blocks", cost: 500, eco: -15, desc: "Fun but made of plastic." },
+    { name: "Wooden Building Blocks", cost: 700, eco: 20, desc: "Made of wood, eco-friendly." }
+  ],
+  [
+    { name: "Individually Wrapped Egg Rolls", cost: 400, eco: -10, desc: "Lots of packaging waste." },
+    { name: "Canned Egg Rolls", cost: 200, eco: 15, desc: "Less packaging, better for Earth." }
+  ],
+  [
+    { name: "Bubble Tea in Plastic Cup", cost: 70, eco: -8, desc: "Convenient, but uses plastic." },
+    { name: "Bubble Tea in Reusable Cup", cost: 60, eco: 12, desc: "Bring your own cup, eco-friendly." }
+  ]
+];
+
+function updateStats() {
+    moneyDisplay.innerText = money;
+    ecoDisplay.innerText = eco;
+}
+
+function checkGameOver() {
+    // 條件1: 回合數已滿
+    if (round >= groups.length) return true;
+    
+    // 條件2: 錢不夠買當前回合最便宜的商品
+    const currentCosts = groups[round].map(item => item.cost);
+    const minCost = Math.min(...currentCosts);
+    if (money < minCost) return true;
+
+    return false;
+}
+
+function render() {
+  updateStats();
+
+  // 檢查遊戲是否結束
+  if (checkGameOver()) {
+    let result = "";
+    let color = "";
+    if (eco >= 50) {
+      result = "🎉 Eco Hero! You really care for the planet!";
+      color = "#4caf50";
+    }
+    else if (eco >= 20) {
+      result = "🙂 Eco Learner! You are learning.";
+      color = "#ff9800";
+    }
+    else {
+      result = "⚠️ Eco Needs Help! Try better choices.";
+      color = "#f44336";
+    }
+
+    shop.innerHTML = `
+      <div class="card" style="grid-column: 1 / -1; text-align: center; border-color: ${color};">
+        <h2>Game Over</h2>
+        <p>Final Money left: 💰 <strong>${money}</strong></p>
+        <p>Final Eco Points: 🌍 <strong>${eco}</strong></p>
+        <h3 style="color: ${color};">${result}</h3>
+        <button onclick="location.reload()">🔄 Play Again</button>
+      </div>
+    `;
+    messageBox.style.color = color;
+    messageBox.innerText = "Game Ended!";
+    return;
+  }
+
+  // 渲染當前回合
+  shop.innerHTML = "";
+  messageBox.style.color = '#1976d2';
+  messageBox.innerText = `Round ${round + 1} of ${groups.length}: Make your choice!`;
+  
+  groups[round].forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const canBuy = money >= item.cost;
+    const ecoColor = item.eco > 0 ? '#4caf50' : '#f44336'; 
+    
+    // 注意：這裡給按鈕加了一個 class 方便後續選取禁用
+    card.innerHTML = `
+      <h3>${item.name}</h3>
+      <p>${item.desc}</p>
+      <p>
+        💰 <strong>${item.cost}</strong> ｜ 
+        🌍 <span style="color:${ecoColor};">${item.eco > 0 ? "+" : ""}${item.eco}</span>
+      </p>
+      <button class="choice-btn ${canBuy ? "" : "disabled"}" 
+              ${canBuy ? "" : "disabled"} 
+              onclick="chooseItem(${index})">
+              Choose This
+      </button>
+    `;
+    shop.appendChild(card);
+  });
+}
+
+function chooseItem(index) {
+  const item = groups[round][index];
+  
+  if (money < item.cost) {
+    messageBox.style.color = '#d32f2f';
+    messageBox.innerText = `Not enough money! Need 💰${item.cost}.`;
+    return;
+  }
+
+  // 1. 立即禁用所有按鈕，防止連點 (Fix Race Condition)
+  const buttons = document.querySelectorAll('.choice-btn');
+  buttons.forEach(btn => {
+      btn.disabled = true;
+      btn.classList.add('disabled');
+      btn.innerText = "Processing...";
+  });
+
+  // 2. 更新數據
+  money -= item.cost;
+  eco += item.eco;
+  
+  // 3. 立即更新上方的錢和分數 (Fix UX Lag)
+  updateStats();
+
+  // 4. 顯示結果訊息
+  messageBox.style.color = '#00796b';
+  messageBox.innerHTML = `You chose: <strong>${item.name}</strong>.`;
+
+  // 5. 增加回合數並延遲渲染下一關
+  round++;
+  setTimeout(render, 800); // 稍微延長一點時間讓用戶看清結果
+}
+
+// 初始化
+render();
+</script>
+
+</body>
+</html>
